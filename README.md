@@ -1,6 +1,6 @@
-# Jaccard Metric Losses: Optimizing the Jaccard Index with Soft Labels
+# Optimization with JDTLoss and evaluation with fine-grained mIoUs for semantic segmentation
 
-Training scripts will be released soon.
+Training scripts will be released by the end of October (at the latest).
 
 ## Benchmarks
 Dataset | Model | SKD | IFVD | CWD | CIRKD | MasKD | DIST | JML-KD
@@ -36,7 +36,7 @@ PASCAL VOC | PSP-R18 | 74.07 | 73.54 | 73.99 | 74.78 | - | - | **75.36**
 ## Usage
 * Coming soon.
 
-## FAQ
+## FAQs
 ### What is the difference between JMLs and the Lovasz-Softmax loss?
 With hard labels, they usually obtain very similar results. However, the Lovasz-Softmax loss is incompatible with soft labels.
 
@@ -46,12 +46,26 @@ With hard labels, they are identical. However, the soft Jaccard loss is incompat
 ### Why I find JMLs perform worse than CE?
 We notice that current training recipes are highly optimized for CE. Although we have shown in the paper that these training hyper-parameters still work for JMLs, the optimal hyper-parameters for JMLs, depending on your datasets and architectures, might be slightly different. For example, through our preliminary experiments, we find that models trained with JMLs usually converge much faster than CE. If a model is trained for excessively long epochs which is the case for many recent segmentation models, the performance with JMLs might degrade.
 
-## Citation
+## Citations
 ```BibTeX
-@article{Wang2023JMLs,
-  title={Jaccard Metric Losses: Optimizing the Jaccard Index with Soft Labels},
-  author={Wang, Zifu and Blaschko, Matthew B.},
-  journal={arXiv},
-  year={2023}
+@InProceedings{Wang2023Revisiting,
+  title     = {Revisiting Evaluation Metrics for Semantic Segmentation: Optimization and Evaluation of Fine-grained Intersection over Union},
+  author    = {Wang, Zifu and Berman, Maxim and Rannen-Triki, Amal and Torr, Philip H.S. and Tuia, Devis and Tuytelaars, Tinne and Van Gool, Luc and Yu, Jiaqian and Blaschko, Matthew B.},
+  booktitle = {NeurIPS},
+  year      = {2023}
+}
+
+@InProceedings{Wang2023JML,
+  title     = {Jaccard Metric Losses: Optimizing the Jaccard Index with Soft Labels},
+  author    = {Wang, Zifu and Ning, Xuefei and Blaschko, Matthew B.},
+  booktitle = {NeurIPS},
+  year      = {2023}
+}
+
+@InProceedings{Wang2023DML,
+  title     = {Dice Semimetric Losses: Optimizing the Dice Score with Soft Labels},
+  author    = {Wang, Zifu and Popordanoska, Teodora and Bertels, Jeroen and Lemmens, Robin and Blaschko, Matthew B.},
+  booktitle = {MICCAI},
+  year      = {2023}
 }
 ```
