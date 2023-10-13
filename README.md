@@ -1,40 +1,81 @@
-# Optimization with JDTLoss and evaluation with fine-grained mIoUs for semantic segmentation
+# Optimization with JDTLoss and Evaluation with Fine-grained mIoUs for Semantic Segmentation
 
 Training scripts will be released by the end of October (at the latest).
 
-## Benchmarks
-Dataset | Model | SKD | IFVD | CWD | CIRKD | MasKD | DIST | JML-KD
-:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:
-Cityscapes | DL3-R18 | 75.42 | 75.59 | 75.55 | 76.38 | 77.00 | 77.10 | **78.14** 
-Cityscapes | DL3-MB2 | 73.82 | 73.50 | 74.66 | 75.42 | 75.26 | - | **77.78**
-Cityscapes | PSP-R18 | 73.29 | 73.71 | 74.36 | 74.73 | 75.34 | 76.31 | **77.75**
-PASCAL VOC | DL3-R18 | 73.51 | 73.85 | 74.02 | 74.50 | - | - | **76.25**
-PASCAL VOC | PSP-R18 | 74.07 | 73.54 | 73.99 | 74.78 | - | - | **75.36**
-
-## Requirements
-* Software: `timm`
-* Hardware: 1-4 16GB GPUs, depending on the batch size and the crop size
+## Models
+* Methods
+  * [UNet](https://arxiv.org/abs/1505.04597)
+  * [DeepLabV3](https://arxiv.org/abs/1706.05587)
+  * [DeepLabV3+](https://arxiv.org/abs/1802.02611)
+  * [PSPNet](https://arxiv.org/abs/1612.01105)
+  * [UPerNet](https://arxiv.org/abs/1807.10221)
+  * [SegFormer](https://arxiv.org/abs/2105.15203)
+* Backbones
+  * [ResNet18/34/50/101/152](https://arxiv.org/abs/1512.03385)
+  * [ConvNeXt-B](https://arxiv.org/abs/2201.03545)
+  * [Xception65](https://arxiv.org/abs/1610.02357)
+  * [EfficientNet-B0](https://arxiv.org/abs/1905.11946)
+  * [MobileNetV2](https://arxiv.org/abs/1801.04381)
+  * [MiTB0/B1/B2/B3/B4](https://arxiv.org/abs/2105.15203)
+  * [MobileViTV2](https://arxiv.org/abs/2206.02680)
+  * [`timm`](https://github.com/huggingface/pytorch-image-models)
 
 ## Datasets
-* Cityscapes
-* PASCAL VOC
-* DeepGlobe Land
+* Urban
+  * [Cityscapes](https://arxiv.org/abs/1604.01685)
+  * [Nighttime Driving](https://arxiv.org/abs/1810.02575)
+  * [Dark Zurich](https://arxiv.org/abs/1901.05946)
+  * [Mapillary Vistas](https://openaccess.thecvf.com/content_ICCV_2017/papers/Neuhold_The_Mapillary_Vistas_ICCV_2017_paper.pdf)
+  * [CamVid](https://link.springer.com/chapter/10.1007/978-3-540-88682-2_5)
+* "Thing" & "stuff" 
+  * [ADE20K](https://arxiv.org/abs/1608.05442)
+  * [COCO-Stuff](https://arxiv.org/abs/1612.03716)
+  * [PASCAL VOC](https://link.springer.com/article/10.1007/s11263-009-0275-4)
+  * [PASCAL Context](https://ieeexplore.ieee.org/document/6909514)
+* Aerial
+  * [DeepGlobe Land](https://arxiv.org/abs/1805.06561)
+  * [DeepGlobe Road](https://arxiv.org/abs/1805.06561)
+  * [DeepGlobe Building](https://arxiv.org/abs/1805.06561)
+* Medical
+  * [LiTS](https://arxiv.org/abs/1901.04056)
+  * [KiTS](https://arxiv.org/abs/1904.00445)
+  * [QUBIQ](https://qubiq.grand-challenge.org)
+ 
+## Metrics
+* Pixel-wise Accuracy
+  * Acc, mAcc
+* mIoU  
+  * $\text{mIoU}^\text{I,C,K,D}$
+* Calibration Error
+  * $\text{ECE}^\text{I,D}$
+  * $\text{SCE}^\text{I,D}$
 
-## Models
-* Backbones
-  * ResNet18/34/50/101/152
-  * Xception65
-  * EfficientNet
-  * MobileNetV2
-  * `timm` models
-* Methods
-  * UNet
-  * PSPNet
-  * DeepLabV3
-  * DeepLabV3+
+## Prerequisites
+#### Requirements
+* Software: `timm`
+* Hardware: 1-4 NVIDIA P100/V100 or 1 NVIDIA A100, depending on the model/dataset/batch size/crop size
+
+#### Data Preparation
+Coming soon.
 
 ## Usage
-* Coming soon.
+* Use the loss in your codebase:
+```
+from losses.jdt_loss import JDTLoss
+
+"""
+The Jaccard loss (default): JDTLoss()
+The Dice loss: JDTLoss(alpha=0.5, beta=0.5)
+"""
+criterion = JDTLoss() 
+logits = model(image)
+loss = criterion(logits, label)
+```
+
+* Hard labels...
+* Label smoothing...
+* Knowledge distillation...
+* Multiple annotators...
 
 ## FAQs
 ### What is the difference between JMLs and the Lovasz-Softmax loss?
@@ -45,6 +86,9 @@ With hard labels, they are identical. However, the soft Jaccard loss is incompat
 
 ### Why I find JMLs perform worse than CE?
 We notice that current training recipes are highly optimized for CE. Although we have shown in the paper that these training hyper-parameters still work for JMLs, the optimal hyper-parameters for JMLs, depending on your datasets and architectures, might be slightly different. For example, through our preliminary experiments, we find that models trained with JMLs usually converge much faster than CE. If a model is trained for excessively long epochs which is the case for many recent segmentation models, the performance with JMLs might degrade.
+
+## Acknowledgements
+We express our gratitude to the creators and maintainers of the following projects: [pytorch-image-models](https://github.com/huggingface/pytorch-image-models), [MMSegmentation](https://github.com/open-mmlab/mmsegmentation), [segmentation_models.pytorch](https://github.com/qubvel/segmentation_models.pytorch), [structure_knowledge_distillation](https://github.com/irfanICMLL/structure_knowledge_distillation)
 
 ## Citations
 ```BibTeX
