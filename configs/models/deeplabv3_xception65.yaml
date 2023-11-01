@@ -1,0 +1,9 @@
+backbone: "xception65"
+method: "deeplabv3"
+output_stride: 8
+out_channels: 512
+aux_out_channels: 256
+dropout: 0.1
+atrous_rates: [12, 24, 36]
+align_corners: False
+aux: True

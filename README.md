@@ -1,7 +1,5 @@
 # Optimization with JDTLoss and Evaluation with Fine-grained mIoUs for Semantic Segmentation
 
-Training scripts will be released by the end of October (at the latest).
-
 ## Models
 * Methods
   * [UNet](https://arxiv.org/abs/1505.04597)
@@ -27,7 +25,7 @@ Training scripts will be released by the end of October (at the latest).
   * [Dark Zurich](https://arxiv.org/abs/1901.05946)
   * [Mapillary Vistas](https://openaccess.thecvf.com/content_ICCV_2017/papers/Neuhold_The_Mapillary_Vistas_ICCV_2017_paper.pdf)
   * [CamVid](https://link.springer.com/chapter/10.1007/978-3-540-88682-2_5)
-* "Thing" & "stuff" 
+* "Thing" & "stuff"
   * [ADE20K](https://arxiv.org/abs/1608.05442)
   * [COCO-Stuff](https://arxiv.org/abs/1612.03716)
   * [PASCAL VOC](https://link.springer.com/article/10.1007/s11263-009-0275-4)
@@ -40,11 +38,11 @@ Training scripts will be released by the end of October (at the latest).
   * [LiTS](https://arxiv.org/abs/1901.04056)
   * [KiTS](https://arxiv.org/abs/1904.00445)
   * [QUBIQ](https://qubiq.grand-challenge.org)
- 
+
 ## Metrics
 * Pixel-wise Accuracy
   * Acc, mAcc
-* mIoU  
+* mIoU
   * $\text{mIoU}^\text{I,C,K,D}$
 * Calibration Error
   * $\text{ECE}^\text{I,D}$
@@ -67,25 +65,31 @@ from losses.jdt_loss import JDTLoss
 The Jaccard loss (default): JDTLoss()
 The Dice loss: JDTLoss(alpha=0.5, beta=0.5)
 """
-criterion = JDTLoss() 
+criterion = JDTLoss()
 logits = model(image)
 loss = criterion(logits, label)
 ```
 
-* Hard labels...
+* Hard labels
+```
+python main.py \
+  --output_dir "path/to/output_dir" \
+  --data_dir "path/to/data_dir" \
+  --model_yaml "deeplabv3plus_resnet101d" \
+  --data_yaml "cityscapes" \
+  --label_yaml "hard" \
+  --loss_yaml "jaccard_ic_present_all" \
+  --schedule_yaml "40k_iters" \
+  --optim_yaml "adamw_lr6e-5" \
+  --test_yaml "test_iou"
+```
+
 * Label smoothing...
 * Knowledge distillation...
 * Multiple annotators...
 
 ## FAQs
-### What is the difference between JMLs and the Lovasz-Softmax loss?
-With hard labels, they usually obtain very similar results. However, the Lovasz-Softmax loss is incompatible with soft labels.
-
-### What is the difference between JMLs and the soft Jaccard loss?
-With hard labels, they are identical. However, the soft Jaccard loss is incompatible with soft labels. Practically, we find some features that are essential for training segmentation models are often missing/wrong in public implementations of the soft Jaccard loss, such as specifying active classes, class weights and ignored pixels. JMLs also include a focal term that can be helpful for highly imbalanced datasets. Therefore, we expect JMLs can outperform the soft Jaccard loss even if only hard labels are presented.
-
-### Why I find JMLs perform worse than CE?
-We notice that current training recipes are highly optimized for CE. Although we have shown in the paper that these training hyper-parameters still work for JMLs, the optimal hyper-parameters for JMLs, depending on your datasets and architectures, might be slightly different. For example, through our preliminary experiments, we find that models trained with JMLs usually converge much faster than CE. If a model is trained for excessively long epochs which is the case for many recent segmentation models, the performance with JMLs might degrade.
+Please refer to [JML](https://arxiv.org/abs/2302.05666) for how to tune the hyper-parameter and how to use JDTLoss.
 
 ## Acknowledgements
 We express our gratitude to the creators and maintainers of the following projects: [pytorch-image-models](https://github.com/huggingface/pytorch-image-models), [MMSegmentation](https://github.com/open-mmlab/mmsegmentation), [segmentation_models.pytorch](https://github.com/qubvel/segmentation_models.pytorch), [structure_knowledge_distillation](https://github.com/irfanICMLL/structure_knowledge_distillation)
@@ -99,14 +103,14 @@ We express our gratitude to the creators and maintainers of the following projec
   year      = {2023}
 }
 
-@InProceedings{Wang2023JML,
+@InProceedings{Wang2023Jaccard,
   title     = {Jaccard Metric Losses: Optimizing the Jaccard Index with Soft Labels},
   author    = {Wang, Zifu and Ning, Xuefei and Blaschko, Matthew B.},
   booktitle = {NeurIPS},
   year      = {2023}
 }
 
-@InProceedings{Wang2023DML,
+@InProceedings{Wang2023Dice,
   title     = {Dice Semimetric Losses: Optimizing the Dice Score with Soft Labels},
   author    = {Wang, Zifu and Popordanoska, Teodora and Bertels, Jeroen and Lemmens, Robin and Blaschko, Matthew B.},
   booktitle = {MICCAI},

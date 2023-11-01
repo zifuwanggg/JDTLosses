@@ -1,0 +1,8 @@
+backbone: "mit_b3"
+method: "segformer"
+output_stride: 32
+out_channels: 512
+aux_out_channels: 256
+dropout: 0.1
+align_corners: False
+aux: True

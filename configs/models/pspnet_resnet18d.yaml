@@ -1,0 +1,9 @@
+backbone: "resnet18d"
+method: "pspnet"
+output_stride: 8
+out_channels: 128
+aux_out_channels: 64
+dropout: 0.1
+bins: [1, 2, 3, 6]
+align_corners: False
+aux: True

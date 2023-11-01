@@ -1,0 +1,6 @@
+optimizer: "adamw"
+lr: 0.00006
+start_lr: 0.000001
+multiplier: 10.0
+power: 1
+weight_decay: 0.01

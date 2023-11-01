@@ -1,0 +1,8 @@
+backbone: "resnet18d"
+method: "unet"
+output_stride: 32
+out_channels: 16
+aux_out_channels: 64
+dropout: 0.1
+align_corners: False
+aux: True

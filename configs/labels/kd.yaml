@@ -1,0 +1,5 @@
+KD: True
+T: 1.0
+label_weight: 0.5
+teacher_weight: 0.5
+kde: False
