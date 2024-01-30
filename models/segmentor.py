@@ -118,9 +118,7 @@ class Segmentor(nn.Module):
                 nn.init.xavier_uniform_(m.weight)
                 if m.bias is not None:
                     nn.init.constant_(m.bias, 0)
-            elif isinstance(m, nn.BatchNorm2d) or \
-                 isinstance(m, nn.GroupNorm) or \
-                 isinstance(m, nn.LayerNorm):
+            elif isinstance(m, nn.BatchNorm2d) or isinstance(m, nn.GroupNorm) or isinstance(m, nn.LayerNorm):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
 
@@ -135,22 +133,12 @@ class Segmentor(nn.Module):
 
     def get_params_list(self, lr, multiplier):
         params_list = []
-        params_list = self.group_weight(params_list,
-                                        self.backbone,
-                                        lr)
-        params_list = self.group_weight(params_list,
-                                        self.method,
-                                        multiplier * lr)
-        params_list = self.group_weight(params_list,
-                                        self.head,
-                                        multiplier * lr)
+        params_list = self.group_weight(params_list, self.backbone, lr)
+        params_list = self.group_weight(params_list, self.method, multiplier * lr)
+        params_list = self.group_weight(params_list, self.head, multiplier * lr)
         if self.aux:
-            params_list = self.group_weight(params_list,
-                                            self.aux_conv,
-                                            multiplier * lr)
-            params_list = self.group_weight(params_list,
-                                            self.aux_head,
-                                            multiplier * lr)
+            params_list = self.group_weight(params_list, self.aux_conv, multiplier * lr)
+            params_list = self.group_weight(params_list, self.aux_head, multiplier * lr)
 
         p = 0
         for params in params_list:
@@ -161,10 +149,7 @@ class Segmentor(nn.Module):
         return params_list
 
 
-    def group_weight(self,
-                     params_list,
-                     module,
-                     lr):
+    def group_weight(self, params_list, module, lr):
         group_decay, group_no_decay = [], []
 
         for _, param in module.named_parameters():
@@ -194,86 +179,53 @@ class Segmentor(nn.Module):
         return logits, aux_logits
 
 
-    def forward_loss_hard_label(self,
-                                image,
-                                label,
-                                keep_mask):
+    def forward_loss_hard_label(self, image, label, keep_mask=None):
         logits, aux_logits = self.forward(image)
 
-        loss_ce = self.ce_weight * self.main_weight * \
-                  self.criterion_ce(logits, label, keep_mask)
+        loss_ce = self.ce_weight * self.main_weight * self.criterion_ce(logits, label, keep_mask)
 
         if self.aux and self.aux_weight > 0:
-            loss_ce += self.ce_weight * self.aux_weight * \
-                       self.criterion_ce(aux_logits, label, keep_mask)
+            loss_ce += self.ce_weight * self.aux_weight * self.criterion_ce(aux_logits, label, keep_mask)
 
         if self.jdt_weight > 0:
-            loss_jdt = self.jdt_weight * \
-                       self.criterion_jdt(logits, label, keep_mask)
+            loss_jdt = self.jdt_weight * self.criterion_jdt(logits, label, keep_mask)
         else:
             loss_jdt = torch.zeros(1, device=logits.device)
 
         return loss_ce, loss_jdt
 
 
-    def forward_loss_soft_label(self,
-                                image,
-                                soft_label,
-                                keep_mask):
-        return self.forward_loss_hard_label(image,
-                                            soft_label,
-                                            keep_mask)
+    def forward_loss_soft_label(self, image, soft_label, keep_mask=None):
+        return self.forward_loss_hard_label(image, soft_label, keep_mask)
 
 
-    def forward_loss_kd(self,
-                        image,
-                        label,
-                        prob_teacher,
-                        aux_prob_teacher,
-                        keep_mask):
+    def forward_loss_kd(self, image, label, prob_teacher, aux_prob_teacher, keep_mask):
         logits, aux_logits = self.forward(image)
 
-        loss_ce = self.ce_weight * self.main_weight * self.label_weight * \
-                  self.criterion_ce(logits, label)
+        loss_ce = self.ce_weight * self.main_weight * self.label_weight * self.criterion_ce(logits, label)
 
         if self.aux and self.aux_weight > 0:
-            loss_ce += self.ce_weight * self.aux_weight * self.label_weight * \
-                       self.criterion_ce(aux_logits, label)
+            loss_ce += self.ce_weight * self.aux_weight * self.label_weight * self.criterion_ce(aux_logits, label)
 
         if self.jdt_weight > 0:
-            loss_jdt = self.jdt_weight * self.label_weight * \
-                       self.criterion_jdt(logits, label)
+            loss_jdt = self.jdt_weight * self.label_weight * self.criterion_jdt(logits, label)
         else:
             loss_jdt = torch.zeros(1, device=logits.device)
 
-        loss_ce += self.ce_weight * self.main_weight * self.teacher_weight * \
-                   self.criterion_kl(logits, prob_teacher, keep_mask)
+        loss_ce += self.ce_weight * self.main_weight * self.teacher_weight * self.criterion_kl(logits, prob_teacher, keep_mask)
 
         if self.aux and self.aux_weight > 0:
-            loss_ce += self.ce_weight * self.aux_weight * self.teacher_weight * \
-                       self.criterion_kl(aux_logits, aux_prob_teacher, keep_mask)
+            loss_ce += self.ce_weight * self.aux_weight * self.teacher_weight * self.criterion_kl(aux_logits, aux_prob_teacher, keep_mask)
 
         if self.jdt_weight > 0:
-            loss_jdt += self.jdt_weight * self.teacher_weight * \
-                        self.criterion_jdt(logits, prob_teacher, keep_mask)
+            loss_jdt += self.jdt_weight * self.teacher_weight * self.criterion_jdt(logits, prob_teacher, keep_mask)
 
         return loss_ce, loss_jdt
 
 
-    def multi_scale_predict(self,
-                            image,
-                            device,
-                            num_classes,
-                            crop_size,
-                            flip=False,
-                            ratios=[1],
-                            stride_rate=2/3):
+    def multi_scale_predict(self, image, device, num_classes, crop_size, flip=False, ratios=[1], stride_rate=2/3):
         if len(ratios) == 1:
-            return self.predict(image,
-                                device,
-                                num_classes,
-                                crop_size,
-                                stride_rate)
+            return self.predict(image, device, num_classes, crop_size, stride_rate)
 
         image_np = image.squeeze(0).numpy().transpose(1, 2, 0)
         image_h, image_w, _ = image_np.shape
@@ -290,8 +242,7 @@ class Segmentor(nn.Module):
             if image_w % 2 and not w % 2:
                 w += 1
 
-            image_resized = cv2.resize(
-                image_np, (w, h), interpolation=cv2.INTER_LINEAR)
+            image_resized = cv2.resize(image_np, (w, h), interpolation=cv2.INTER_LINEAR)
 
             pad_h = max(crop_h - h, 0)
             pad_w = max(crop_w - w, 0)
@@ -299,28 +250,20 @@ class Segmentor(nn.Module):
             pad_w_half = int(pad_w / 2)
             if pad_h > 0 or pad_w > 0:
                 mean = [0.485, 0.456, 0.406]
-                image_resized = \
-                    cv2.copyMakeBorder(image_resized,
-                                       pad_h_half,
-                                       pad_h - pad_h_half,
-                                       pad_w_half,
-                                       pad_w - pad_w_half,
-                                       cv2.BORDER_CONSTANT,
-                                       value=mean)
+                image_resized = cv2.copyMakeBorder(image_resized,
+                                                   pad_h_half,
+                                                   pad_h - pad_h_half,
+                                                   pad_w_half,
+                                                   pad_w - pad_w_half,
+                                                   cv2.BORDER_CONSTANT,
+                                                   value=mean)
 
-            image_tensor = torch.from_numpy(
-                image_resized.transpose(2, 0, 1)).unsqueeze(0)
+            image_tensor = torch.from_numpy(image_resized.transpose(2, 0, 1)).unsqueeze(0)
 
             if flip:
-                image_tensor = torch.cat(
-                    [image_tensor, image_tensor.flip(3)], 0)
+                image_tensor = torch.cat([image_tensor, image_tensor.flip(3)], 0)
 
-            prob_tensor = \
-                self.predict(image_tensor,
-                             device,
-                             num_classes,
-                             crop_size,
-                             stride_rate)
+            prob_tensor = self.predict(image_tensor, device, num_classes, crop_size, stride_rate)
 
             if flip:
                 prob_tensor = (prob_tensor[0] + prob_tensor[1].flip(2)) / 2
@@ -336,12 +279,7 @@ class Segmentor(nn.Module):
         return prob
 
 
-    def predict(self,
-                image,
-                device,
-                num_classes,
-                crop_size,
-                stride_rate):
+    def predict(self, image, device, num_classes, crop_size, stride_rate):
         image = image.to(device)
         batch_size, _, image_h, image_w = image.shape
         crop_h, crop_w = crop_size
@@ -356,8 +294,7 @@ class Segmentor(nn.Module):
             grid_h = int(ceil(float(image_h - crop_h) / stride_h) + 1)
             grid_w = int(ceil(float(image_w - crop_w) / stride_w) + 1)
 
-            logits_all = \
-                torch.zeros((batch_size, num_classes, image_h, image_w)).to(device)
+            logits_all = torch.zeros((batch_size, num_classes, image_h, image_w)).to(device)
             logits_count = torch.zeros((batch_size, 1, image_h, image_w)).to(device)
 
             for index_h in range(grid_h):

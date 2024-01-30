@@ -1,0 +1,12 @@
+dataset: "camvid"
+in_channels: 3
+num_classes: 11
+scale_min: 0.5
+scale_max: 2.0
+crop_size: [512, 512]
+ignore_index: 11
+reduce_zero_label: False
+image_prefix: "/images/"
+image_suffix: ".png"
+label_prefix: "/annotations/"
+label_suffix: "_labelTrainIds.png"

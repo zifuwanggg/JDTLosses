@@ -35,7 +35,7 @@ def get_args():
     parser.add_argument("--teacher_model_yaml", type=str, default="deeplabv3_resnet50d")
     parser.add_argument("--data_yaml", type=str, default="cityscapes")
     parser.add_argument("--label_yaml", type=str, default="hard")
-    parser.add_argument("--loss_yaml", type=str, default="jaccard_present_all")
+    parser.add_argument("--loss_yaml", type=str, default="jaccard_ic_present_all")
     parser.add_argument("--schedule_yaml", type=str, default="40k_iters")
     parser.add_argument("--optim_yaml", type=str, default="adamw_lr6e-5")
     parser.add_argument("--test_yaml", type=str, default="test_iou")
@@ -73,24 +73,11 @@ def main(args):
 
     criterion_ce, criterion_kl, criterion_jdt = get_criterion(args)
 
-    model = Segmentor(args.model_config,
-                      args.data_config,
-                      args.label_config,
-                      args.loss_config,
-                      criterion_ce,
-                      criterion_kl,
-                      criterion_jdt).to(device)
-    params_list = model.get_params_list(args.optim_config["lr"],
-                                        args.optim_config["multiplier"])
+    model = Segmentor(args.model_config, args.data_config, args.label_config, args.loss_config, criterion_ce, criterion_kl, criterion_jdt).to(device)
+    params_list = model.get_params_list(args.optim_config["lr"], args.optim_config["multiplier"])
 
     if args.label_config.get("KD", False):
-        teacher = Segmentor(args.teacher_model_config,
-                            args.data_config,
-                            args.label_config,
-                            args.loss_config,
-                            None,
-                            None,
-                            None).to(device)
+        teacher = Segmentor(args.teacher_model_config, args.data_config, args.label_config, args.loss_config, None, None, None).to(device)
         _ = load_checkpoint(args.teacher_checkpoint, teacher, None, None, device)
         logging.info(f"Teacher checkpoint at {args.teacher_checkpoint} is loaded")
 
@@ -98,37 +85,25 @@ def main(args):
     train_loader, test_loader = get_dataloader(args)
 
     if args.optim_config["optimizer"] == "sgd":
-        optimizer = optim.SGD(params_list,
-                              lr=args.optim_config["lr"],
-                              weight_decay=args.optim_config["weight_decay"],
-                              momentum=args.optim_config["momentum"])
+        optimizer = optim.SGD(params_list, lr=args.optim_config["lr"], weight_decay=args.optim_config["weight_decay"], momentum=args.optim_config["momentum"])
     elif args.optim_config["optimizer"] == "adamw":
-        optimizer = optim.AdamW(params_list,
-                                lr=args.optim_config["lr"],
-                                weight_decay=args.optim_config["weight_decay"])
+        optimizer = optim.AdamW(params_list, lr=args.optim_config["lr"], weight_decay=args.optim_config["weight_decay"])
     else:
         raise NotImplementedError
 
     if args.schedule_config["by_epoch"]:
-        args.schedule_config["train_iters"] = \
-            args.schedule_config["train_epochs"] * len(train_loader)
+        args.schedule_config["train_iters"] = args.schedule_config["train_epochs"] * len(train_loader)
     else:
-        args.schedule_config["train_epochs"] = \
-            args.schedule_config["train_iters"] // len(train_loader) + 1
+        args.schedule_config["train_epochs"] = args.schedule_config["train_iters"] // len(train_loader) + 1
 
-    warmup_iters = args.schedule_config["warmup_ratio"] * \
-        args.schedule_config["train_iters"]
+    warmup_iters = args.schedule_config["warmup_ratio"] * args.schedule_config["train_iters"]
 
-    lr_lambda = lambda iteration: \
-        max(args.optim_config["start_lr"] / args.optim_config["lr"], iteration / warmup_iters) \
-        if iteration < warmup_iters \
-        else (1. - (iteration - warmup_iters) / (args.schedule_config["train_iters"] - warmup_iters)) \
-            ** args.optim_config["power"]
+    lr_lambda = lambda iteration: max(args.optim_config["start_lr"] / args.optim_config["lr"], iteration / warmup_iters) \
+        if iteration < warmup_iters else (1. - (iteration - warmup_iters) / (args.schedule_config["train_iters"] - warmup_iters)) ** args.optim_config["power"]
 
     scheduler = optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lr_lambda)
 
-    if os.path.isfile(args.model_checkpoint) and \
-       args.model_checkpoint[-4:] == ".pth":
+    if os.path.isfile(args.model_checkpoint) and args.model_checkpoint[-4:] == ".pth":
         ckp_path = args.model_checkpoint
     else:
         avail = glob(os.path.join(args.output_dir, 'checkpoint*.pth'))
@@ -137,15 +112,13 @@ def main(args):
         ckp_path = avail[-1][1] if avail else ""
 
     if os.path.isfile(ckp_path):
-        args.schedule_config["start_epoch"] = \
-            load_checkpoint(ckp_path, model, optimizer, scheduler, device) + 1
+        args.schedule_config["start_epoch"] = load_checkpoint(ckp_path, model, optimizer, scheduler, device) + 1
         logging.info(f"Checkpoint at {ckp_path} is loaded")
     else:
         args.schedule_config["start_epoch"] = 1
         logging.info(f"No checkpoint is found")
 
-    args.schedule_config["curr_iter"] = 1 + len(train_loader) * \
-        (args.schedule_config["start_epoch"] - 1)
+    args.schedule_config["curr_iter"] = 1 + len(train_loader) * (args.schedule_config["start_epoch"] - 1)
 
     # Do not use `nn.SyncBatchNorm.convert_sync_batchnorm`
     # https://github.com/rwightman/pytorch-image-models/issues/1254
@@ -161,44 +134,22 @@ def main(args):
     toprint += "".join(f"{arg}: {value}\n" for arg, value in vars(args).items())
     logging.info(toprint)
 
-    for epoch in range(args.schedule_config["start_epoch"],
-                       args.schedule_config["train_epochs"] + 1):
+    for epoch in range(args.schedule_config["start_epoch"], args.schedule_config["train_epochs"] + 1):
         logging.info(f"Begin train epoch {epoch}")
 
         if args.distributed:
             train_loader.sampler.set_epoch(epoch - 1)
 
         if args.label_config.get("HARD", False):
-            train_hard_label(model,
-                             train_loader,
-                             optimizer,
-                             scheduler,
-                             device,
-                             epoch,
-                             args)
-        elif args.label_config.get("LS", False) or \
-             args.label_config.get("MR", False):
-            train_soft_label(model,
-                             train_loader,
-                             optimizer,
-                             scheduler,
-                             device,
-                             epoch,
-                             args)
+            train_hard_label(model, train_loader, optimizer, scheduler, device, epoch, args)
+        elif args.label_config.get("LS", False) or args.label_config.get("MR", False):
+            train_soft_label(model, train_loader, optimizer, scheduler, device, epoch, args)
         elif args.label_config.get("KD", False):
-            train_kd(model,
-                     teacher,
-                     train_loader,
-                     optimizer,
-                     scheduler,
-                     device,
-                     epoch,
-                     args)
+            train_kd(model, teacher, train_loader, optimizer, scheduler, device, epoch, args)
         else:
             raise NotImplementedError
 
-        if args.main_process and \
-           epoch % args.schedule_config["save_epochs"] == 0:
+        if args.main_process and epoch % args.schedule_config["save_epochs"] == 0:
             state = {"epoch": epoch,
                      "state_dict": model.state_dict(),
                      "optimizer": optimizer.state_dict(),
@@ -211,40 +162,18 @@ def main(args):
 
             torch.save(state, ckp_path)
 
-            if args.test_config["ITER"]["remove_old"] and \
-               os.path.isfile(ckp_path) and \
-               os.path.isfile(old_ckp_path) :
+            if args.test_config["ITER"]["remove_old"] and os.path.isfile(ckp_path) and os.path.isfile(old_ckp_path):
                 os.remove(old_ckp_path)
 
         if args.main_process:
-            if epoch == args.schedule_config["train_epochs"] or \
-               (args.test_config["ITER"]["test_epochs"] > 0 and \
-                   epoch % args.test_config["ITER"]["test_epochs"] == 0):
+            if epoch == args.schedule_config["train_epochs"] or (args.test_config["ITER"]["test_epochs"] > 0 and epoch % args.test_config["ITER"]["test_epochs"] == 0):
                 logging.info(f"Begin test epoch {epoch}")
 
                 with torch.no_grad():
-                    if args.data_config["dataset"] in ["lits", "kits"] or \
-                       "qubiq" in args.data_config["dataset"]:
-                        test_medical(model,
-                                     test_loader,
-                                     device,
-                                     epoch,
-                                     args,
-                                     False)
+                    if args.data_config["dataset"] in ["lits", "kits"] or "qubiq" in args.data_config["dataset"]:
+                        test_medical(model, test_loader, device, epoch, args)
                     else:
-                        test(model,
-                             test_loader,
-                             device,
-                             epoch,
-                             args)
-
-                    if "qubiq" in args.data_config["dataset"]:
-                        test_medical(model,
-                                     test_loader,
-                                     device,
-                                     epoch,
-                                     args,
-                                     True)
+                        test(model, test_loader, device, epoch, args)
 
         logging.info(f"Finish epoch {epoch}\n")
 
@@ -255,10 +184,7 @@ if __name__ == "__main__":
 
     torch.cuda.device(args.local_rank)
     if args.distributed:
-        dist.init_process_group(backend="nccl",
-                                init_method="env://",
-                                world_size=args.world_size,
-                                rank=args.local_rank)
+        dist.init_process_group(backend="nccl", init_method="env://", world_size=args.world_size, rank=args.local_rank)
         synchronize()
 
     if args.local_rank == 0:

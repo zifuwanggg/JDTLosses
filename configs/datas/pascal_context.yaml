@@ -1,0 +1,12 @@
+dataset: "pascal_context"
+in_channels: 3
+num_classes: 59
+scale_min: 0.5
+scale_max: 2.0
+crop_size: [512, 512]
+ignore_index: 255
+reduce_zero_label: False
+image_prefix: "/JPEGImages/"
+image_suffix: ".jpg"
+label_prefix: "/SegmentationClassContext/"
+label_suffix: ".png"

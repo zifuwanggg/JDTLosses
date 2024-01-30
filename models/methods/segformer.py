@@ -6,10 +6,7 @@ from ..ops import ConvBNReLU
 
 
 class SegFormer(nn.Module):
-    def __init__(self,
-                 backbone_channels,
-                 out_channels,
-                 align_corners):
+    def __init__(self, backbone_channels, out_channels, align_corners):
         super().__init__()
 
         self.convs = nn.ModuleList()

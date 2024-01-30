@@ -1,0 +1,12 @@
+dataset: "mapillary_vistas"
+in_channels: 3
+num_classes: 65
+scale_min: 0.5
+scale_max: 2.0
+crop_size: [512, 1024]
+ignore_index: 65
+reduce_zero_label: False
+image_prefix: "/images/"
+image_suffix: ".jpg"
+label_prefix: "/v1.2/labels/"
+label_suffix: "_labelTrainIds.png"

@@ -13,11 +13,11 @@ class Compose(object):
     def __init__(self, transforms):
         self.transforms = transforms
 
-    def __call__(self, image, label, panoptic=None):
+    def __call__(self, image, label):
         for t in self.transforms:
-            image, label, panoptic = t(image, label, panoptic)
+            image, label = t(image, label)
 
-        return image, label, panoptic
+        return image, label
 
 
 class RandScale(object):
@@ -26,7 +26,7 @@ class RandScale(object):
         self.aspect_ratio = aspect_ratio
         self.float_label = float_label
 
-    def __call__(self, image, label, panoptic=None):
+    def __call__(self, image, label):
         temp_scale = self.scale[0] + (self.scale[1] - self.scale[0]) * random.random()
         temp_aspect_ratio = 1.0
 
@@ -43,25 +43,20 @@ class RandScale(object):
             label = cv2.resize(label, None, fx=scale_factor_x, fy=scale_factor_y, interpolation=cv2.INTER_LINEAR)
         else:
             label = cv2.resize(label, None, fx=scale_factor_x, fy=scale_factor_y, interpolation=cv2.INTER_NEAREST)
-            if panoptic is not None:
-                panoptic = cv2.resize(panoptic, None, fx=scale_factor_x, fy=scale_factor_y, interpolation=cv2.INTER_NEAREST)
 
-        return image, label, panoptic
+        return image, label
 
 
 class RandomHorizontalFlip(object):
     def __init__(self, p=0.5):
         self.p = p
 
-    def __call__(self, image, label, panoptic=None):
+    def __call__(self, image, label):
         if random.random() < self.p:
             image = cv2.flip(image, 1)
             label = cv2.flip(label, 1)
 
-            if panoptic is not None:
-                panoptic = cv2.flip(panoptic, 1)
-
-        return image, label, panoptic
+        return image, label
 
 
 class Pad(object):
@@ -70,7 +65,7 @@ class Pad(object):
         self.padding = padding
         self.ignore_index = ignore_index
 
-    def __call__(self, image, label, panoptic=None):
+    def __call__(self, image, label):
         h, w = label.shape
         pad_h = self.size[0] - h
         pad_w = self.size[1] - w
@@ -85,10 +80,7 @@ class Pad(object):
             image = cv2.copyMakeBorder(image, pad_h_half, pad_h - pad_h_half, pad_w_half, pad_w - pad_w_half, cv2.BORDER_CONSTANT, value=self.padding)
             label = cv2.copyMakeBorder(label, pad_h_half, pad_h - pad_h_half, pad_w_half, pad_w - pad_w_half, cv2.BORDER_CONSTANT, value=self.ignore_index)
 
-            if panoptic is not None:
-                panoptic = cv2.copyMakeBorder(panoptic, pad_h_half, pad_h - pad_h_half, pad_w_half, pad_w - pad_w_half, cv2.BORDER_CONSTANT, value=0)
-
-        return image, label, panoptic
+        return image, label
 
 
 class Crop(object):
@@ -97,8 +89,8 @@ class Crop(object):
         self.crop = size
         self.crop_type = crop_type
 
-    def __call__(self, image, label, panoptic=None):
-        image, label, panoptic = self.pad(image, label, panoptic)
+    def __call__(self, image, label):
+        image, label = self.pad(image, label)
 
         h, w = label.shape
 
@@ -112,17 +104,14 @@ class Crop(object):
         image = image[h_off : h_off + self.crop[0], w_off : w_off + self.crop[1]]
         label = label[h_off : h_off + self.crop[0], w_off : w_off + self.crop[1]]
 
-        if panoptic is not None:
-            panoptic = panoptic[h_off : h_off + self.crop[0], w_off : w_off + self.crop[1]]
-
-        return image, label, panoptic
+        return image, label
 
 
 class ToTensor(object):
     def __init__(self, float_label=False):
         self.float_label = float_label
 
-    def __call__(self, image, label, panoptic=None):
+    def __call__(self, image, label):
         if len(image.shape) == 2:
             image = np.expand_dims(image, axis=2)
 
@@ -135,11 +124,7 @@ class ToTensor(object):
         if not isinstance(label, torch.LongTensor) and not self.float_label:
             label = label.long()
 
-        if panoptic is not None:
-            panoptic = torch.from_numpy(panoptic)
-            panoptic = panoptic.long()
-
-        return image, label, panoptic
+        return image, label
 
 
 class Normalize(object):
@@ -147,7 +132,7 @@ class Normalize(object):
         self.mean = mean
         self.std = std
 
-    def __call__(self, image, label, panoptic=None):
+    def __call__(self, image, label):
         if self.std is None:
             for t, m in zip(image, self.mean):
                 t.sub_(m)
@@ -155,7 +140,7 @@ class Normalize(object):
             for t, m, s in zip(image, self.mean, self.std):
                 t.sub_(m).div_(s)
 
-        return image, label, panoptic
+        return image, label
 
 
 class WindowStandardize(object):
@@ -163,8 +148,8 @@ class WindowStandardize(object):
         self.window_low = window_low
         self.window_high = window_high
 
-    def __call__(self, image, label, panoptic=None):
+    def __call__(self, image, label):
         image = torch.clamp(image, min=self.window_low, max=self.window_high)
         image = 2 * (image - self.window_low) / (self.window_high - self.window_low) - 1
 
-        return image, label, panoptic
+        return image, label

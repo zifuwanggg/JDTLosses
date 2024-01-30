@@ -13,12 +13,10 @@ METRIC:
   Acc: True
   mIoUD: True
   mIoUIC: True
-  mIoUK: False
   ECED: True
   ECEI: True
   SCED: True
   SCEI: True
   num_bins: 10
-  threshold: 0
   q: 5
   q_bar: True

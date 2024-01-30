@@ -7,11 +7,7 @@ from ..ops import ConvBNReLU
 
 
 class UPerNet(nn.Module):
-    def __init__(self,
-                 backbone_channels,
-                 out_channels,
-                 bins,
-                 align_corners):
+    def __init__(self, backbone_channels, out_channels, bins, align_corners):
         super().__init__()
 
         self.ppm = PPM(in_channels=backbone_channels[-1],

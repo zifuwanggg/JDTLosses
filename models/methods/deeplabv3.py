@@ -74,10 +74,7 @@ class ASPP(nn.Module):
 
 
 class ASPPPooling(nn.Sequential):
-    def __init__(self,
-                 in_channels,
-                 out_channels,
-                 align_corners):
+    def __init__(self, in_channels, out_channels, align_corners):
         super().__init__(nn.AdaptiveAvgPool2d(1),
                          ConvBNReLU(in_channels=in_channels,
                                     out_channels=out_channels,

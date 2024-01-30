@@ -18,18 +18,10 @@ class MedicalDataset(BaseDataset):
                  ignore_index=255,
                  reduce_zero_label=False,
                  reduce_panoptic_zero_label=False,
-                 float_label=False,
                  image_prefix=None,
                  image_suffix=None,
                  label_prefix=None,
                  label_suffix=None):
-
-        self.fold = fold
-        self.num_cases = num_cases
-        self.window_low = window_low
-        self.window_high = window_high
-        self.float_label = float_label
-
         super().__init__(train=train,
                          data_dir=data_dir,
                          in_channels=in_channels,
@@ -45,11 +37,16 @@ class MedicalDataset(BaseDataset):
                          label_prefix=label_prefix,
                          label_suffix=label_suffix)
 
+        self.fold = fold
+        self.num_cases = num_cases
+        self.window_low = window_low
+        self.window_high = window_high
+
 
     def get_transform(self):
         if self.train:
             data_transform = transform.Compose([
-                transform.RandScale([self.scale_min, self.scale_max], weighted=self.weighted),
+                transform.RandScale([self.scale_min, self.scale_max]),
                 transform.RandomHorizontalFlip(p=0.5),
                 transform.Crop([self.crop_size[0], self.crop_size[1]], crop_type="rand", padding=self.window_low, ignore_index=self.ignore_index),
                 transform.ToTensor(weighted=self.weighted),

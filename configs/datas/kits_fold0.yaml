@@ -1,0 +1,16 @@
+dataset: "kits"
+fold: 0
+num_cases: 210
+in_channels: 1
+num_classes: 2
+scale_min: 0.5
+scale_max: 2.0
+window_low: -200
+window_high: 300
+crop_size: [384, 384]
+ignore_index: 255
+reduce_zero_label: False
+image_prefix: null
+image_suffix: null
+label_prefix: null
+label_suffix: null

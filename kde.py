@@ -2,10 +2,7 @@ import torch
 import torch.nn as nn
 
 
-def get_idx_idy(label,
-                num_keys,
-                biased,
-                ignore_index=255):
+def get_idx_idy(label, num_keys, biased, ignore_index):
     classes, counts = label.unique(return_counts=True)
 
     if ignore_index in classes:
@@ -23,9 +20,7 @@ def get_idx_idy(label,
         weights = ((label == c).to(torch.float32)).reshape(-1)
         index = torch.multinomial(
             input=weights, num_samples=int(min(n, ctn)), replacement=False)
-        idx_label, idy_label = \
-            torch.div(index, label.shape[0], rounding_mode='floor'), \
-                torch.remainder(index, label.shape[0])
+        idx_label, idy_label = torch.div(index, label.shape[0], rounding_mode='floor'), torch.remainder(index, label.shape[0])
 
         if j == 0:
             idx = idx_label
@@ -44,8 +39,8 @@ def get_kde(prob_flatten,
             crop_size):
     """
     https://github.com/tpopordanoska/ece-kde/blob/main/ece_kde.py
-    Only tested on LiTS/KiTS and could be numerically unstable
-    for datasets with a large number of classes
+    This function was only tested on LiTS/KiTS
+    It could be numerically unstable on datasets with a large number of classes
     """
     alphas = (prob_key / bandwidth + 1).T
     log_beta = (torch.sum((torch.lgamma(alphas)), dim=1) - torch.lgamma(torch.sum(alphas, dim=1)))
@@ -63,11 +58,7 @@ def get_kde(prob_flatten,
     return prob
 
 
-def kde(prob,
-        aux_prob,
-        label,
-        label_boundary,
-        args):
+def kde(prob, aux_prob, label, label_boundary, args):
     for i in range(label.shape[0]):
         prob_i = prob[i, ]
         aux_prob_i = aux_prob[i, ]

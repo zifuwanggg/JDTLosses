@@ -39,11 +39,7 @@ def add_handler(output_dir, log_name, mode="a"):
     logging.getLogger().addHandler(stream_handler)
 
 
-def load_checkpoint(ckp_path,
-                    model,
-                    optimizer=None,
-                    scheduler=None,
-                    device="cuda"):
+def load_checkpoint(ckp_path, model, optimizer=None, scheduler=None, device="cuda"):
     checkpoint = torch.load(ckp_path, map_location=device)
     start_epoch = checkpoint["epoch"]
     state_dict = checkpoint["state_dict"]
@@ -59,26 +55,19 @@ def load_checkpoint(ckp_path,
 
         model.load_state_dict(new_state_dict)
 
-    if optimizer:
+    if optimizer != None:
         optimizer.load_state_dict(checkpoint["optimizer"])
 
-    if scheduler:
+    if scheduler != None:
         scheduler.load_state_dict(checkpoint["lr_scheduler"])
 
     return start_epoch
 
 
-def get_remaining_time(iter,
-                       epoch,
-                       epoch_iters,
-                       end,
-                       args):
-    passed_iter = 1 + iter + epoch_iters * \
-        (epoch - args.schedule_config["start_epoch"])
-    remaining_iter = args.schedule_config["train_iters"] - \
-        args.schedule_config["curr_iter"]
-    seconds = remaining_iter * \
-        ((end - args.schedule_config["start_time"]) / passed_iter)
+def get_remaining_time(iter, epoch, epoch_iters, end, args):
+    passed_iter = 1 + iter + epoch_iters * (epoch - args.schedule_config["start_epoch"])
+    remaining_iter = args.schedule_config["train_iters"] - args.schedule_config["curr_iter"]
+    seconds = remaining_iter * ((end - args.schedule_config["start_time"]) / passed_iter)
     remaining_time = str(datetime.timedelta(seconds=int(seconds)))
 
     return remaining_time

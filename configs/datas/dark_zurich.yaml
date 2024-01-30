@@ -1,0 +1,12 @@
+dataset: "dark_zurich"
+in_channels: 3
+num_classes: 19
+scale_min: 0.5
+scale_max: 2.0
+crop_size: [512, 1024]
+ignore_index: 255
+reduce_zero_label: False
+image_prefix: "/rgb_anon/"
+image_suffix: "_rgb_anon.png"
+label_prefix: "/gt/"
+label_suffix: "_gt_labelTrainIds.png"

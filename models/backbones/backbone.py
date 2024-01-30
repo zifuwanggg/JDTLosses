@@ -13,10 +13,10 @@ class Backbone(nn.Module):
             ["resnet152d", "resnet101d", "resnet50d", "resnet34d", "resnet18d",
              "convnext_base.fb_in22k_ft_in1k_384", "xception65",
              "efficientnet_b0", "mobilenetv2_100", "mobilevitv2_100"
-             "mit_b4", "mit_b3", "mit_b3", "mit_b2", "mit_b1", "mit_b0"]:
+             "mit_b5", "mit_b4", "mit_b3", "mit_b3", "mit_b2", "mit_b1", "mit_b0"]:
             raise NotImplementedError
 
-        if backbone in [f"mit_b{i}" for i in range(5)]:
+        if backbone in [f"mit_b{i}" for i in range(6)]:
             encoder = mix_transformer_encoders[backbone]["encoder"]
             params = mix_transformer_encoders[backbone]["params"]
             settings = mix_transformer_encoders[backbone]["pretrained_settings"]["imagenet"]

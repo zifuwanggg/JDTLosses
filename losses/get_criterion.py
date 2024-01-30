@@ -4,18 +4,14 @@ from .jdt_loss import JDTLoss
 
 
 def get_criterion(args):
-    if args.label_config.get("HARD", False) or \
-       args.label_config.get("KD", False):
+    if args.label_config.get("HARD", False) or args.label_config.get("KD", False):
         criterion_ce = FocalLoss(ignore_index=args.data_config["num_classes"])
-    elif args.label_config.get("LS", False) or \
-         args.label_config.get("MR", False):
+    elif args.label_config.get("LS", False) or args.label_config.get("MR", False):
         criterion_ce = KLDivLoss(T=1)
     else:
         raise NotImplementedError
 
-    if args.label_config.get("HARD", False) or \
-       args.label_config.get("LS", False) or \
-       args.label_config.get("MR", False):
+    if args.label_config.get("HARD", False) or args.label_config.get("LS", False) or args.label_config.get("MR", False):
         criterion_kl = None
     elif args.label_config.get("KD", False):
         criterion_kl = KLDivLoss(T=args.label_config["T"])
@@ -30,11 +26,12 @@ def get_criterion(args):
                             gamma=args.loss_config["gamma"],
                             smooth=args.loss_config["smooth"],
                             threshold=args.loss_config["threshold"],
+                            log_loss=args.loss_config["log_loss"],
+                            ignore_index=args.data_config["num_classes"],
+                            class_weights=args.loss_config["class_weights"],
                             active_classes_mode_hard= \
                                 args.loss_config["active_classes_mode_hard"],
                             active_classes_mode_soft= \
-                                args.loss_config["active_classes_mode_soft"],
-                            class_weights=args.loss_config["class_weights"],
-                            ignore_index=args.data_config["num_classes"])
+                                args.loss_config["active_classes_mode_soft"])
 
     return criterion_ce, criterion_kl, criterion_jdt

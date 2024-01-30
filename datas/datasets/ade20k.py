@@ -1,4 +1,3 @@
-import json
 from glob import glob
 
 from .base_dataset import BaseDataset
@@ -15,13 +14,11 @@ class ADE20K(BaseDataset):
                  crop_size=[512, 512],
                  ignore_index=255,
                  reduce_zero_label=True,
-                 reduce_panoptic_zero_label=False,
                  image_prefix="/images/",
                  image_suffix=".jpg",
                  label_prefix="/annotations/",
                  label_suffix=".png",
                  **kwargs):
-
         super().__init__(train=train,
                          data_dir=data_dir,
                          in_channels=in_channels,
@@ -31,50 +28,28 @@ class ADE20K(BaseDataset):
                          crop_size=crop_size,
                          ignore_index=ignore_index,
                          reduce_zero_label=reduce_zero_label,
-                         reduce_panoptic_zero_label=reduce_panoptic_zero_label,
                          image_prefix=image_prefix,
                          image_suffix=image_suffix,
                          label_prefix=label_prefix,
                          label_suffix=label_suffix)
 
-
-    def get_panoptic_file(self, label_file):
-        if "training" in label_file:
-            panoptic_file = label_file.replace("/annotations/training/", "/ade20k_panoptic_train/")
-        else:
-            panoptic_file = label_file.replace("/annotations/validation/", "/ade20k_panoptic_val/")
-
-        return panoptic_file
+        self.image_list = self.get_image_list()
+        self.transform = self.get_transform()
+        self.class_names = self.get_class_names()
+        self.color_map = self.get_color_map()
 
 
     def get_image_list(self):
         train_image_list = glob(f"{self.data_dir}/ade/ADEChallengeData2016/images/training/*.jpg")
         val_image_list = glob(f"{self.data_dir}/ade/ADEChallengeData2016/images/validation/*.jpg")
 
-        assert len(train_image_list) == 20210, \
-            f"`len(train_image_list)`: {len(train_image_list)} does not equal to 20210"
-
-        assert len(val_image_list) == 2000, \
-            f"`len(val_image_list)`: {len(val_image_list)} does not equal to 2000"
+        assert len(train_image_list) == 20210
+        assert len(val_image_list) == 2000
 
         if self.train:
             return train_image_list
         else:
             return val_image_list
-
-
-    def get_annos(self):
-        split = "train" if self.train else "val"
-        json_file = f"{self.data_dir}/ade/ADEChallengeData2016/ade20k_panoptic_{split}.json"
-
-        annos = json.load(open(json_file))["annotations"]
-
-        anno_map = {}
-        for i, anno in enumerate(annos):
-            file_name = anno["file_name"]
-            anno_map[file_name] = i
-
-        return annos, anno_map
 
 
     def get_class_names(self):

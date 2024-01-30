@@ -1,0 +1,12 @@
+dataset: "nighttime_driving"
+in_channels: 3
+num_classes: 19
+scale_min: 0.5
+scale_max: 2.0
+crop_size: [512, 1024]
+ignore_index: 255
+reduce_zero_label: False
+image_prefix: "/leftImg8bit/"
+image_suffix: "_leftImg8bit.png"
+label_prefix: "/gtCoarse_daytime_trainvaltest/"
+label_suffix: "_gtCoarse_labelTrainIds.png"

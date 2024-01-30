@@ -6,11 +6,7 @@ from ..ops import ConvBNReLU
 
 
 class PSPNet(nn.Module):
-    def __init__(self,
-                 backbone_channels,
-                 out_channels,
-                 bins,
-                 align_corners):
+    def __init__(self, backbone_channels, out_channels, bins, align_corners):
         super().__init__()
 
         self.ppm = PPM(in_channels=backbone_channels[-1],
@@ -31,11 +27,7 @@ class PSPNet(nn.Module):
 
 
 class PPM(nn.Module):
-    def __init__(self,
-                 in_channels,
-                 out_channels,
-                 bins,
-                 align_corners):
+    def __init__(self, in_channels, out_channels, bins, align_corners):
         super(PPM, self).__init__()
 
         self.pools = nn.ModuleList()

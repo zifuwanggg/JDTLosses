@@ -14,13 +14,11 @@ class CamVid(BaseDataset):
                 crop_size=[512, 512],
                 ignore_index=11,
                 reduce_zero_label=False,
-                reduce_panoptic_zero_label=False,
                 image_prefix="/images/",
                 image_suffix=".png",
                 label_prefix="/annotations/",
                 label_suffix="_labelTrainIds.png",
                 **kwargs):
-
         super().__init__(train=train,
                          data_dir=data_dir,
                          in_channels=in_channels,
@@ -30,22 +28,23 @@ class CamVid(BaseDataset):
                          crop_size=crop_size,
                          ignore_index=ignore_index,
                          reduce_zero_label=reduce_zero_label,
-                         reduce_panoptic_zero_label=reduce_panoptic_zero_label,
                          image_prefix=image_prefix,
                          image_suffix=image_suffix,
                          label_prefix=label_prefix,
                          label_suffix=label_suffix)
+
+        self.image_list = self.get_image_list()
+        self.transform = self.get_transform()
+        self.class_names = self.get_class_names()
+        self.color_map = self.get_color_map()
 
 
     def get_image_list(self):
         train_image_list = glob(f"{self.data_dir}/camvid/images/train/*.png")
         val_image_list = glob(f"{self.data_dir}/camvid/images/test/*.png")
 
-        assert len(train_image_list) == 469, \
-            f"`len(train_image_list)`: {len(train_image_list)} does not equal to 469"
-
-        assert len(val_image_list) == 232, \
-            f"`len(val_image_list)`: {len(val_image_list)} does not equal to 232"
+        assert len(train_image_list) == 469
+        assert len(val_image_list) == 232
 
         if self.train:
             return train_image_list

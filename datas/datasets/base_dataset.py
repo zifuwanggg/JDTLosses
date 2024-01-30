@@ -4,7 +4,6 @@ import numpy as np
 
 from . import transform
 
-
 cv2.setNumThreads(0)
 cv2.ocl.setUseOpenCL(False)
 
@@ -20,12 +19,10 @@ class BaseDataset(torch.utils.data.Dataset):
                  crop_size=[512, 1024],
                  ignore_index=255,
                  reduce_zero_label=False,
-                 reduce_panoptic_zero_label=False,
                  image_prefix=None,
                  image_suffix=None,
                  label_prefix=None,
                  label_suffix=None):
-
         self.train = train
         self.data_dir = data_dir
         self.in_channels = in_channels
@@ -35,17 +32,15 @@ class BaseDataset(torch.utils.data.Dataset):
         self.crop_size = crop_size
         self.ignore_index = ignore_index
         self.reduce_zero_label = reduce_zero_label
-        self.reduce_panoptic_zero_label = reduce_panoptic_zero_label
         self.image_prefix = image_prefix
         self.image_suffix = image_suffix
         self.label_prefix = label_prefix
         self.label_suffix = label_suffix
 
-        self.image_list = self.get_image_list()
-        self.annos, self.anno_map = self.get_annos()
-        self.transform = self.get_transform()
-        self.class_names = self.get_class_names()
-        self.color_map = self.get_color_map()
+        self.image_list = None
+        self.transform = None
+        self.class_names = None
+        self.color_map = None
 
 
     def __getitem__(self, index):
@@ -57,34 +52,19 @@ class BaseDataset(torch.utils.data.Dataset):
         image = np.float32(image_rgb)
         label = cv2.imread(label_file, cv2.IMREAD_GRAYSCALE)
 
-        if self.annos is not None:
-            panoptic_file = self.get_panoptic_file(label_file)
-            panoptic_bgr = cv2.imread(panoptic_file, cv2.IMREAD_COLOR)
-            panoptic_rgb = cv2.cvtColor(panoptic_bgr, cv2.COLOR_BGR2RGB)
-            panoptic = self.rgb2id(panoptic_rgb)
-        else:
-            panoptic = None
-
         if self.reduce_zero_label:
             label[label == 0] = self.ignore_index
             label -= 1
             label[label == (self.ignore_index - 1)] = self.ignore_index
 
-        image, label, panoptic = self.transform(image, label, panoptic)
+        image, label = self.transform(image, label)
 
         if self.ignore_index and self.ignore_index != self.num_classes:
             label[label == self.ignore_index] = self.num_classes
 
-        assert image.shape[1:3] == label.shape[0:2], \
-            f"`image.shape[1:3]`: {image.shape[1:3]} does not equal to `label.shape[0:2]`: {label.shape[0:2]}"
+        assert image.shape[1:3] == label.shape[0:2]
 
-        if panoptic is not None:
-            assert label.shape == panoptic.shape, \
-            "`label.shape`: {label.shape} does not equal to `panoptic.shape`: {panoptic.shape}"
-        else:
-            panoptic = panoptic_file = image_file
-
-        return image, label, panoptic, image_file, panoptic_file
+        return image, label, image_file
 
 
     def __len__(self):
@@ -101,23 +81,8 @@ class BaseDataset(torch.utils.data.Dataset):
         return image_file
 
 
-    def get_panoptic_file(self, label_file):
-        return
-
-
-    def rgb2id(self, rgb):
-        if rgb.dtype == np.uint8:
-            rgb = rgb.astype(np.int32)
-
-        return rgb[:, :, 0] + 256 * rgb[:, :, 1] + 256 * 256 * rgb[:, :, 2]
-
-
     def get_image_list(self):
         return
-
-
-    def get_annos(self):
-        return None, None
 
 
     def get_transform(self):

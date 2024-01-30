@@ -1,6 +1,4 @@
-import os
 from glob import glob
-
 import numpy as np
 
 from .medical_dataset import MedicalDataset
@@ -22,13 +20,11 @@ class LiTS(MedicalDataset):
                  ignore_index=255,
                  weighted=False,
                  reduce_zero_label=False,
-                 reduce_panoptic_zero_label=False,
                  image_prefix=None,
                  image_suffix=None,
                  label_prefix=None,
                  label_suffix=None,
                  **kwargs):
-
         super().__init__(train=train,
                          data_dir=data_dir,
                          fold=fold,
@@ -43,11 +39,15 @@ class LiTS(MedicalDataset):
                          ignore_index=ignore_index,
                          weighted=weighted,
                          reduce_zero_label=reduce_zero_label,
-                         reduce_panoptic_zero_label=reduce_panoptic_zero_label,
                          image_prefix=image_prefix,
                          image_suffix=image_suffix,
                          label_prefix=label_prefix,
                          label_suffix=label_suffix)
+
+        self.image_list = self.get_image_list()
+        self.transform = self.get_transform()
+        self.class_names = self.get_class_names()
+        self.color_map = self.get_color_map()
 
 
     def __getitem__(self, index):
@@ -58,21 +58,18 @@ class LiTS(MedicalDataset):
         image = np.float32(image)
         label = npz.get("mask")
 
-        image, label, _ = self.transform(image, label)
+        image, label = self.transform(image, label)
 
         # 0 -> 0, 1 -> 0, 2 -> 1, 255 -> 127
         label >>= 1
         label[label > 1] = 2
 
-        assert image.shape[1:3] == label.shape[0:2], \
-            f"`image.shape[1:3]`: {image.shape[1:3]} does not equal to `label.shape[0:2]`: {label.shape[0:2]}"
+        assert image.shape[1:3] == label.shape[0:2]
 
-        return image, label
+        return image, label, image_file
 
 
     def get_image_list(self):
-        data_dir = os.path.join(self.data_dir)
-
         train_image_list, val_image_list = [], []
 
         cases = list(range(self.num_cases))
@@ -82,7 +79,7 @@ class LiTS(MedicalDataset):
         else:
             val_cases = set(cases[fold_size * self.fold : ])
 
-        tumor_slices = glob(f"{data_dir}/train/*.npz")
+        tumor_slices = glob(f"{self.data_dir}/train/*.npz")
 
         for slice in tumor_slices:
             case = int(slice.split("/")[-1].split("_")[0])
@@ -91,39 +88,23 @@ class LiTS(MedicalDataset):
             else:
                 train_image_list.append(slice)
 
-        assert len(train_image_list) + len(val_image_list) == 7190, \
-            f"`len(train_image_list)`: {len(train_image_list)}, `len(val_image_list)`: {len(val_image_list)}"
+        assert len(train_image_list) + len(val_image_list) == 7190
 
         if self.fold == 0:
-            assert len(train_image_list) == 5870, \
-                f"`len(train_image_list)`: {len(train_image_list)} does not equal to 5870"
-
-            assert len(val_image_list) == 1320, \
-                f"`len(val_image_list)`: {len(val_image_list)} does not equal to 1320"
+            assert len(train_image_list) == 5870
+            assert len(val_image_list) == 1320
         elif self.fold == 1:
-            assert len(train_image_list) == 6301, \
-                f"`len(train_image_list)`: {len(train_image_list)} does not equal to 6301"
-
-            assert len(val_image_list) == 889, \
-                f"`len(val_image_list)`: {len(val_image_list)} does not equal to 889"
+            assert len(train_image_list) == 6301
+            assert len(val_image_list) == 889
         elif self.fold == 2:
-            assert len(train_image_list) == 6731, \
-                f"`len(train_image_list)`: {len(train_image_list)} does not equal to 6731"
-
-            assert len(val_image_list) == 459, \
-                f"`len(val_image_list)`: {len(val_image_list)} does not equal to 459"
+            assert len(train_image_list) == 6731
+            assert len(val_image_list) == 459
         elif self.fold == 3:
-            assert len(train_image_list) == 4912, \
-                f"`len(train_image_list)`: {len(train_image_list)} does not equal to 4912"
-
-            assert len(val_image_list) == 2278, \
-                f"`len(val_image_list)`: {len(val_image_list)} does not equal to 2278"
+            assert len(train_image_list) == 4912
+            assert len(val_image_list) == 2278
         elif self.fold == 4:
-            assert len(train_image_list) == 4946, \
-                f"`len(train_image_list)`: {len(train_image_list)} does not equal to 4946"
-
-            assert len(val_image_list) == 2244, \
-                f"`len(val_image_list)`: {len(val_image_list)} does not equal to 2244"
+            assert len(train_image_list) == 4946
+            assert len(val_image_list) == 2244
 
         if self.train:
             return train_image_list

@@ -6,19 +6,13 @@ import torch
 from utils import get_remaining_time
 
 
-def train_hard_label(model,
-                     data_loader,
-                     optimizer,
-                     scheduler,
-                     device,
-                     epoch,
-                     args):
+def train_hard_label(model, data_loader, optimizer, scheduler, device, epoch, args):
     torch.cuda.reset_peak_memory_stats(device)
 
     model.train()
 
     end = time.time()
-    for iter, (image, label, _, _, _) in enumerate(data_loader):
+    for iter, (image, label, _) in enumerate(data_loader):
         start = time.time()
         toprint = f"Epoch: [{epoch}|{args.schedule_config['train_epochs']}], "
         toprint += f"Iter: [{args.schedule_config['curr_iter']}|{args.schedule_config['train_iters']}], "
@@ -28,22 +22,15 @@ def train_hard_label(model,
         label = label.to(device)
 
         optimizer.zero_grad()
-        loss_ce, loss_jdt = model.forward_loss_hard_label(image,
-                                                          label,
-                                                          None)
+        loss_ce, loss_jdt = model.forward_loss_hard_label(image, label)
         loss = loss_ce + loss_jdt
         loss.backward()
         optimizer.step()
         scheduler.step()
 
         end = time.time()
-        if iter == 0 or \
-           (args.schedule_config["curr_iter"] % args.schedule_config["log_iters"] == 0):
-            remaining_time = get_remaining_time(iter,
-                                                epoch,
-                                                len(data_loader),
-                                                end,
-                                                args)
+        if iter == 0 or (args.schedule_config["curr_iter"] % args.schedule_config["log_iters"] == 0):
+            remaining_time = get_remaining_time(iter, epoch, len(data_loader), end, args)
             mem = torch.cuda.max_memory_allocated(device) / 1024 ** 3
             lr = optimizer.param_groups[0]["lr"]
 

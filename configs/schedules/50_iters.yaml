@@ -1,8 +1,0 @@
-train_iters: 50
-train_epochs: -1
-log_iters: 10
-save_epochs: 1
-warmup_ratio: 0.01
-num_workers: 4
-batch_size: 8
-by_epoch: False

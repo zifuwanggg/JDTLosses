@@ -1,0 +1,19 @@
+dataset: "qubiq/brain-tumor"
+qubiq_label: "weighted"
+qubiq_task: 0
+fold: 0
+num_cases: 32
+num_raters: 3
+in_channels: 4
+num_classes: 2
+scale_min: 0.5
+scale_max: 2.0
+window_low: 0
+window_high: 255
+crop_size: [256, 256]
+ignore_index: 255
+reduce_zero_label: False
+image_prefix: null
+image_suffix: null
+label_prefix: null
+label_suffix: null

@@ -6,10 +6,7 @@ from ..ops import ConvBNReLU
 
 
 class UNet(nn.Module):
-    def __init__(self,
-                 backbone_channels,
-                 out_channels,
-                 align_corners):
+    def __init__(self, backbone_channels, out_channels, align_corners):
         super().__init__()
 
         backbone_channels = backbone_channels[::-1]
@@ -40,11 +37,7 @@ class UNet(nn.Module):
 
 
 class Block(nn.Module):
-    def __init__(self,
-                 in_channels,
-                 skip_channels,
-                 out_channels,
-                 align_corners):
+    def __init__(self, in_channels, skip_channels, out_channels, align_corners):
         super().__init__()
 
         self.conv = nn.Sequential(ConvBNReLU(in_channels=in_channels + skip_channels,

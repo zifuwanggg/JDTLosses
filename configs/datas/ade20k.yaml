@@ -1,0 +1,12 @@
+dataset: "ade20k"
+in_channels: 3
+num_classes: 150
+scale_min: 0.5
+scale_max: 2.0
+crop_size: [512, 512]
+ignore_index: 255
+reduce_zero_label: True
+image_prefix: "/images/"
+image_suffix: ".jpg"
+label_prefix: "/annotations/"
+label_suffix: ".png"

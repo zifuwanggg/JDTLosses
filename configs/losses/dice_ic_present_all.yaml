@@ -1,0 +1,16 @@
+main_weight: 0.5
+aux_weight: 0.5
+ce_weight: 0.25
+jdt_weight: 0.75
+mIoUD: 0.0
+mIoUI: 0.5
+mIoUC: 0.5
+alpha: 0.5
+beta: 0.5
+gamma: 1.0
+smooth: 1.0
+threshold: 0.01
+log_loss: False
+class_weights: null
+active_classes_mode_hard: "PRESENT"
+active_classes_mode_soft: "ALL"
