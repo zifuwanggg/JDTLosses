@@ -198,7 +198,7 @@ python main.py \
   </details>
 
 ## FAQs
-Please refer to [JML](https://arxiv.org/abs/2302.05666) for how to tune the hyper-parameter and how to use JDTLoss.
+[FAQs.md](FAQs.md)
 
 ## Acknowledgements
 We express our gratitude to the creators and maintainers of the following projects: [`pytorch-image-models`](https://github.com/huggingface/pytorch-image-models), [`MMSegmentation`](https://github.com/open-mmlab/mmsegmentation), [`segmentation_models.pytorch`](https://github.com/qubvel/segmentation_models.pytorch), [`structure_knowledge_distillation`](https://github.com/irfanICMLL/structure_knowledge_distillation)
