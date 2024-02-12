@@ -1,6 +1,6 @@
 # FAQs
 
-## Shoudld I use the L1 norm or the L2 norm?
+## Should I use the L1 norm or the L2 norm?
 The Dice loss, originally proposed to utilize the L2 norm [7], is more frequently used with the L1 norm in the literature [3, 8, 9, 10, 11]. The two variants of the Jaccard and Dice loss are compared in [2, 6] and their results suggest a superior performance of the L1 norm over the L2 norm. Furthermore, prominent frameworks such as [nnUNet](https://github.com/MIC-DKFZ/nnUNet/blob/997804c7510634dc8fd83f1194b434c60815a93e/nnunetv2/training/loss/dice.py#L8), [MONAI](https://github.com/Project-MONAI/MONAI/blob/ff430286c37e78d7592372a5a97377f0cbb0219c/monai/losses/dice.py#L30) and [segmentation_models.pytorch](https://github.com/qubvel/segmentation_models.pytorch/blob/6db76a1106426ac5b55f39fba68168f3bccae7f8/segmentation_models_pytorch/losses/dice.py#L12) all adopt the L1 norm as the default setting in their implementations.
 
 ## Should I combine the cross-entropy loss with JDTLoss?
