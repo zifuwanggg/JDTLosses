@@ -17,8 +17,9 @@ class JDTLoss(_Loss):
                  alpha=1.0,
                  beta=1.0,
                  gamma=1.0,
-                 smooth=1.0,
+                 smooth=1e-3,
                  threshold=0.01,
+                 norm=1,
                  log_loss=False,
                  ignore_index=None,
                  class_weights=None,
@@ -35,6 +36,7 @@ class JDTLoss(_Loss):
                 less accurate predictions that have been misclassified.
             smooth (float): A floating number to avoid `NaN` error.
             threshold (float): The threshold to select active classes.
+            norm (int): The norm to compute the cardinality.
             log_loss (bool): Compute the log loss or not.
             ignore_index (int | None): The class index to be ignored.
             class_weights (list[float] | None): The weight of each class.
@@ -54,6 +56,7 @@ class JDTLoss(_Loss):
         assert mIoUD >= 0 and mIoUI >= 0 and mIoUC >= 0 and \
                alpha >= 0 and beta >= 0 and gamma >= 1 and \
                smooth >= 0 and threshold >= 0
+        assert isinstance(norm, int) and norm > 0
         assert ignore_index == None or isinstance(ignore_index, int)
         assert class_weights == None or all((isinstance(w, float)) for w in class_weights)
         assert active_classes_mode_hard in ["ALL", "PRESENT"]
@@ -67,6 +70,7 @@ class JDTLoss(_Loss):
         self.gamma = gamma
         self.smooth = smooth
         self.threshold = threshold
+        self.norm = norm
         self.log_loss = log_loss
         self.ignore_index = ignore_index
         if class_weights == None:
@@ -122,11 +126,18 @@ class JDTLoss(_Loss):
             prob = prob * keep_mask
             label = label * keep_mask
 
-        cardinality = torch.sum(prob + label, dim=2)
-        difference = torch.sum(torch.abs(prob - label), dim=2)
-        tp = (cardinality - difference) / 2
-        fp = torch.sum(prob, dim=2) - tp
-        fn = torch.sum(label, dim=2) - tp
+        prob_card = torch.norm(prob, p=self.norm, dim=2)
+        label_card = torch.norm(label, p=self.norm, dim=2)
+        diff_card = torch.norm(prob - label, p=self.norm, dim=2)
+
+        if self.norm > 1:
+            prob_card = torch.pow(prob_card, exponent=self.norm)
+            label_card = torch.pow(label_card, exponent=self.norm)
+            diff_card = torch.pow(diff_card, exponent=self.norm)
+
+        tp = (prob_card + label_card - diff_card) / 2
+        fp = prob_card - tp
+        fn = label_card - tp
 
         loss = 0
         batch_size, num_classes = prob.shape[:2]
