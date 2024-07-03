@@ -1,10 +1,10 @@
 # FAQs
 
-## Should I use the L1 norm or the L2 norm?
-The Dice loss, originally proposed to utilize the L2 norm [7], is more frequently used with the L1 norm in the literature [3, 8, 9, 10, 11]. The two variants of the Jaccard and Dice loss are compared in [2, 6] and their results suggest a superior performance of the L1 norm over the L2 norm. Furthermore, prominent frameworks such as [nnUNet](https://github.com/MIC-DKFZ/nnUNet/blob/997804c7510634dc8fd83f1194b434c60815a93e/nnunetv2/training/loss/dice.py#L8), [MONAI](https://github.com/Project-MONAI/MONAI/blob/ff430286c37e78d7592372a5a97377f0cbb0219c/monai/losses/dice.py#L30) and [segmentation_models.pytorch](https://github.com/qubvel/segmentation_models.pytorch/blob/6db76a1106426ac5b55f39fba68168f3bccae7f8/segmentation_models_pytorch/losses/dice.py#L12) all adopt the L1 norm as the default setting in their implementations.
+## Should I use the $L^1$ norm or the $L^2$ norm?
+The Dice loss, originally proposed to utilize the $L^2$ norm [7], is more frequently used with the $L^1$ norm in the literature [3, 8, 9, 10, 11]. The two variants of the Jaccard and Dice loss are compared in [2, 6] and their results suggest a superior performance of the $L^1$ norm over the $L^2$ norm. Furthermore, prominent frameworks such as [nnUNet](https://github.com/MIC-DKFZ/nnUNet/blob/997804c7510634dc8fd83f1194b434c60815a93e/nnunetv2/training/loss/dice.py#L8), [MONAI](https://github.com/Project-MONAI/MONAI/blob/ff430286c37e78d7592372a5a97377f0cbb0219c/monai/losses/dice.py#L30) and [segmentation_models.pytorch](https://github.com/qubvel/segmentation_models.pytorch/blob/6db76a1106426ac5b55f39fba68168f3bccae7f8/segmentation_models_pytorch/losses/dice.py#L12) all adopt the $L^1$ norm as the default setting in their implementations.
 
-## Should I combine the cross-entropy loss with JDTLoss?
-In a survery study [12], among participants in 80 medical imaging competitions, 39% exclusively utilize the cross-entropy loss; 36% use a combination of the cross-entropy loss and the Dice loss; 26% only employ the Dice loss. Berman et al. [4] suggest an approach where models are initially trained with the cross-entropy loss and subsequently fine-tuned using the Lovasz-Softmax loss. Currently, the predominant method for training models on natural images involves integrating the cross-entropy loss and the Dice loss in equal proportions (1:1 ratio) [9, 10, 11]. However, we [1, 2, 3] find that, across natural, aerial, and medical image models, mixing the cross-entropy loss and JDTLoss with a ratio of 0.25:0.75 tends to yield superior results.
+## Should I combine with the cross-entropy loss?
+In a survery study [12], among participants in 80 medical imaging competitions, 39% exclusively utilize the cross-entropy loss; 36% use a combination of the cross-entropy loss and the Dice loss; 26% only employ the Dice loss. Berman et al. [4] suggest an approach where models are initially trained with the cross-entropy loss and subsequently fine-tuned using the Lovasz-Softmax loss. Currently, the predominant method for training models on natural images involves integrating the cross-entropy loss and the Dice loss in equal proportions (1:1 ratio) [9, 10, 11]. However, we [1, 2, 3] find that, across natural, aerial, and medical image models, mixing the cross-entropy loss and the Jaccard loss or the Dice loss with a ratio of 0.25:0.75 tends to yield superior results.
 
 ## How should I choose the training hyper-parameters?
 Although training hyper-parameters (such as learning rate, weight decay, etc) are usually selected based on the cross-entropy loss, the adoption of JDTLoss does not require modifications to these hyperparameters [1, 2, 3]. However, it is important to highlight that the gradient of the cross-entropy loss plateaus as the prediction is close to the target, while the gradient of the Jaccard loss remains steeper [2]. This distinction implies that models trained solely with the cross-entropy loss may require longer epochs to converge. On the other hand, employing JDTLoss for extended epochs could potentially result in overfitting. In light of this, our experiments [1, 2, 3] normally reduce the number of epochs to half of the original value.
@@ -27,6 +27,19 @@ If there exists severe class imbalances, the class-wise loss may inadvertently a
 We should align the loss function with the evaluation metric. Therefore, when the evaluation metric is IoU, the Jaccard loss [2] is advised, while it is the Dice score, the Dice loss [3] is more appropriate. The Tversky loss [3] is useful when separate weights are required for false positives and false negatives. Furthermore, when dealing with fine-grained evaluation metrics, it is imperative to adjust the loss function accordingly [1].
 
 It is also worth noting, as previously discussed, that while both serve as differentiable surrogates of the Jaccard index, the implementations of Jaccard loss and the Lovasz-Softmax loss [4, 5] often differ. However, when utilizing the same implementation (such as calculating the loss value over each individual image or over all images in the mini-batch; using which classes to calcualte the loss), their results tend to be remarkably similar [2, 6]. Additionally, it is important to recognize that the Lovasz-Softmax loss is not compatible with soft labels.
+
+## Can I use the loss in other settings?
+The Jaccard, Dice and Tversky loss satisfy both reflexivity and positivity on $\mathbb{R}^n \times \mathbb{R}^n$, indicating their potential for broader applications. For instance, they can be used to replace or complement other loss functions, such as the cross-entropy loss, the $L^p$ norm or cosine similarity.
+
+In the paper, we write the Jaccard loss as:
+
+$$1 - \frac{||x||_1+||y||_1-||x-y||_1}{||x||_1+||y||_1+||x-y||_1},$$
+
+so that it aligns with the soft Jaccard loss using the $L^2$ norm. Alternatively, the Jaccard loss can also be written as:
+
+$$1 - \frac{||x+y||_1-||x-y||_1}{||x+y||_1+||x-y||_1}.$$
+
+These two formulations are equivalent when $x, y \in \mathbb{R}_{>0}^n$. However, plotting these functions for $x, y \in \mathbb{R}$ reveals that the first version becomes exceedingly flat when $xy < 0$. The second version also has issues; for example, when $y > 0$ and $x < -y$, the loss drives $x$ towards $-\infty$. Therefore, when $x, y \in \mathbb{R}^n$, such as from a feature space, we recommend scaling them to the positive domain first.
 
 ## References
 [1] Zifu Wang, Maxim Berman, Amal Rannen-Triki, Philip H.S. Torr, Devis Tuia, Tinne Tuytelaars, Luc Van Gool, Jiaqian Yu, Matthew B. Blaschko. Revisiting Evaluation Metrics for Semantic Segmentation: Optimization and Evaluation of Fine-grained Intersection over Union. NeurIPS, 2023.
